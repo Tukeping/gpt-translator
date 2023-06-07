@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Nxglabs,Fred</title>
+</head>
+<body>
+  中文 ==> 英文: <input type="text" size="50" id="chat1" /> <button type="button" onclick="handleSend1()">发送</button> <br/>
+  英文 ==> 中文: <input type="text" size="50" id="chat2" /> <button type="button" onclick="handleSend2()">发送</button> <br/>
+  <div id="reply1"></div> <br/>
+
+  <script>
+    const chat1 = document.getElementById('chat1');
+    chat1.addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
+          handleSend1();
+        }
+    });
+
+    const chat2 = document.getElementById('chat2');
+    chat2.addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
+          handleSend2();
+        }
+    });
+
+    // 判断浏览器是否支持websocket
+    var CreateWebSocket = (function () {
+      return function (url) {
+        if (window.WebSocket) return new WebSocket(url);
+        if (window.MozWebSocket) return new MozWebSocket(url);
+        return false;
+      }
+    })();
+
+    // 创建一个websocket, 13.215.99.71
+    var webSocket = CreateWebSocket("ws://127.0.0.1:3000/her/v1/websocket/translate");
+
+    // 监听连接开启
+    webSocket.onopen = function (evt) {
+      // const message = '你好啊,世界!';
+      // console.log('send: ', message);
+      // webSocket.send(message);
+    }
+
+    let replyContent = '';
+
+    // 监听websocket通讯
+    webSocket.onmessage = function (evt) {
+        // 这是服务端返回的数据
+        const message = evt.data;
+        console.log(message);
+        if(message !== '[DONE]') {
+          appendText(message, 'reply1');
+        } else {
+          appendText('\n', 'reply1');
+        }
+        // 前端主动关闭连接
+        // webSocket.close();
+    }
+
+    // 监听连接关闭
+    webSocket.onclose = function (evt) {
+        console.log("Connection closed.");
+    }
+
+    function handleSend1() {
+      if(webSocket) {
+        const message = document.getElementById('chat1').value;
+        if(message) {
+          console.log(message);
+          webSocket.send(`translate "${message}" to English.`);
+        }
+      }
+    }
+
+    function handleSend2() {
+      if(webSocket) {
+        const message = document.getElementById('chat2').value;
+        if(message) {
+          console.log(message);
+          webSocket.send(`translate "${message}" to Chinese. Do not appear pinyin marks.`);
+        }
+      }
+    }
+
+    function appendText(text, elementId) {
+        const targetElement = document.getElementById(elementId);
+        if (targetElement) {
+            const textNode = document.createTextNode(text);
+            targetElement.appendChild(textNode);
+        } else {
+            console.error(`Element with ID "${elementId}" not found.`);
+        }
+    }
+  </script>
+</body>
+</html>
